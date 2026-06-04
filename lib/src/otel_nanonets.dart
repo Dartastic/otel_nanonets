@@ -2,7 +2,6 @@
 // Copyright 2025-2026 Mindful Software LLC d/b/a Dartastic.io, All rights reserved.
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
-import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 
 import 'otel_nanonets_suppression.dart';
 
@@ -54,52 +53,67 @@ Future<T> tracedNanonets<T>({
   final t = tracer ?? OTel.tracerProvider().getTracer('otel_nanonets');
   final span = t.startSpan('nanonets $operation', kind: SpanKind.client);
   try {
-    span.setStringAttribute('rpc.system', 'nanonets');
-    span.setStringAttribute('gen_ai.system', 'nanonets');
+    span.addAttributes(
+        OTel.attributes([OTel.attributeString('rpc.system', 'nanonets')]));
+    span.addAttributes(
+        OTel.attributes([OTel.attributeString('gen_ai.system', 'nanonets')]));
     final r = await invoke();
     final res = r.result;
     if (res != null) {
       if (res.modelId != null) {
-        span.setStringAttribute('gen_ai.request.model', res.modelId!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeString('gen_ai.request.model', res.modelId!)]));
       }
       if (res.modelType != null) {
-        span.setStringAttribute('nanonets.model.type', res.modelType!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeString('nanonets.model.type', res.modelType!)]));
       }
       if (res.fileName != null) {
-        span.setStringAttribute('file.name', res.fileName!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeString('file.name', res.fileName!)]));
       }
       if (res.fileSize != null) {
-        span.setIntAttribute('file.size', res.fileSize!);
+        span.addAttributes(
+            OTel.attributes([OTel.attributeInt('file.size', res.fileSize!)]));
       }
       if (res.pageCount != null) {
-        span.setIntAttribute('nanonets.page_count', res.pageCount!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeInt('nanonets.page_count', res.pageCount!)]));
       }
       if (res.predictionId != null) {
-        span.setStringAttribute('nanonets.prediction.id', res.predictionId!);
+        span.addAttributes(OTel.attributes([
+          OTel.attributeString('nanonets.prediction.id', res.predictionId!)
+        ]));
       }
       if (res.confidence != null) {
-        span.setDoubleAttribute('nanonets.confidence', res.confidence!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeDouble('nanonets.confidence', res.confidence!)]));
       }
       if (res.fieldCount != null) {
-        span.setIntAttribute('nanonets.field_count', res.fieldCount!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeInt('nanonets.field_count', res.fieldCount!)]));
       }
       if (res.durationMs != null) {
-        span.setIntAttribute('nanonets.duration', res.durationMs!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeInt('nanonets.duration', res.durationMs!)]));
       }
       if (res.statusCode != null) {
-        span.setIntAttribute('http.response.status_code', res.statusCode!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeInt('http.response.status_code', res.statusCode!)]));
       }
       if (res.errorCode != null) {
-        span.setStringAttribute('nanonets.error.code', res.errorCode!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeString('nanonets.error.code', res.errorCode!)]));
       }
-      final fail =
-          res.errorCode != null ||
+      final fail = res.errorCode != null ||
           (res.statusCode != null && res.statusCode! >= 400);
       if (fail) {
-        span.setStringAttribute(
-          ErrorResource.errorType.key,
-          res.errorCode ?? 'nanonets.error',
-        );
+        span.addAttributes(OTel.attributes([
+          OTel.attributeString(
+            ErrorResource.errorType.key,
+            res.errorCode ?? 'nanonets.error',
+          )
+        ]));
         span.setStatus(SpanStatusCode.Error, res.errorMessage);
       }
     }
