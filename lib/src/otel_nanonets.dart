@@ -1,11 +1,12 @@
-// Licensed under the Dartastic Pro Software License Agreement.
+// Licensed under the Apache License, Version 2.0
 // Copyright 2025-2026 Mindful Software LLC d/b/a Dartastic.io, All rights reserved.
 
-import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
+import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 
 import 'otel_nanonets_suppression.dart';
 
 class NanonetsResult {
+  /// Creates a result.
   const NanonetsResult({
     this.modelId,
     this.modelType,
@@ -35,8 +36,13 @@ class NanonetsResult {
   final String? errorMessage;
 }
 
+/// What a traced call returned: the value for the caller plus fields
+/// recorded on the span.
 class NanonetsCallResult<T> {
+  /// Creates a call result.
   const NanonetsCallResult({required this.value, this.result});
+
+  /// The value returned to the caller.
   final T value;
   final NanonetsResult? result;
 }
@@ -44,73 +50,74 @@ class NanonetsCallResult<T> {
 Future<T> tracedNanonets<T>({
   required String operation,
   required Future<NanonetsCallResult<T>> Function() invoke,
-  Tracer? tracer,
+  APITracer? tracer,
 }) async {
   if (nanonetsInstrumentationSuppressed()) {
     final r = await invoke();
     return r.value;
   }
-  final t = tracer ?? OTel.tracerProvider().getTracer('otel_nanonets');
+  final t = tracer ?? OTelAPI.tracerProvider().getTracer('otel_nanonets');
   final span = t.startSpan('nanonets $operation', kind: SpanKind.client);
   try {
-    span.addAttributes(
-        OTel.attributes([OTel.attributeString('rpc.system', 'nanonets')]));
-    span.addAttributes(
-        OTel.attributes([OTel.attributeString('gen_ai.system', 'nanonets')]));
+    span.addAttributes(OTelAPI.attributes(
+        [OTelAPI.attributeString('rpc.system', 'nanonets')]));
+    span.addAttributes(OTelAPI.attributes(
+        [OTelAPI.attributeString('gen_ai.system', 'nanonets')]));
     final r = await invoke();
     final res = r.result;
     if (res != null) {
       if (res.modelId != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeString('gen_ai.request.model', res.modelId!)]));
+        span.addAttributes(OTelAPI.attributes(
+            [OTelAPI.attributeString('gen_ai.request.model', res.modelId!)]));
       }
       if (res.modelType != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeString('nanonets.model.type', res.modelType!)]));
+        span.addAttributes(OTelAPI.attributes(
+            [OTelAPI.attributeString('nanonets.model.type', res.modelType!)]));
       }
       if (res.fileName != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeString('file.name', res.fileName!)]));
+        span.addAttributes(OTelAPI.attributes(
+            [OTelAPI.attributeString('file.name', res.fileName!)]));
       }
       if (res.fileSize != null) {
-        span.addAttributes(
-            OTel.attributes([OTel.attributeInt('file.size', res.fileSize!)]));
+        span.addAttributes(OTelAPI.attributes(
+            [OTelAPI.attributeInt('file.size', res.fileSize!)]));
       }
       if (res.pageCount != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeInt('nanonets.page_count', res.pageCount!)]));
+        span.addAttributes(OTelAPI.attributes(
+            [OTelAPI.attributeInt('nanonets.page_count', res.pageCount!)]));
       }
       if (res.predictionId != null) {
-        span.addAttributes(OTel.attributes([
-          OTel.attributeString('nanonets.prediction.id', res.predictionId!)
+        span.addAttributes(OTelAPI.attributes([
+          OTelAPI.attributeString('nanonets.prediction.id', res.predictionId!)
         ]));
       }
       if (res.confidence != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeDouble('nanonets.confidence', res.confidence!)]));
+        span.addAttributes(OTelAPI.attributes(
+            [OTelAPI.attributeDouble('nanonets.confidence', res.confidence!)]));
       }
       if (res.fieldCount != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeInt('nanonets.field_count', res.fieldCount!)]));
+        span.addAttributes(OTelAPI.attributes(
+            [OTelAPI.attributeInt('nanonets.field_count', res.fieldCount!)]));
       }
       if (res.durationMs != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeInt('nanonets.duration', res.durationMs!)]));
+        span.addAttributes(OTelAPI.attributes(
+            [OTelAPI.attributeInt('nanonets.duration', res.durationMs!)]));
       }
       if (res.statusCode != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeInt('http.response.status_code', res.statusCode!)]));
+        span.addAttributes(OTelAPI.attributes([
+          OTelAPI.attributeInt('http.response.status_code', res.statusCode!)
+        ]));
       }
       if (res.errorCode != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeString('nanonets.error.code', res.errorCode!)]));
+        span.addAttributes(OTelAPI.attributes(
+            [OTelAPI.attributeString('nanonets.error.code', res.errorCode!)]));
       }
       final fail = res.errorCode != null ||
           (res.statusCode != null && res.statusCode! >= 400);
       if (fail) {
-        span.addAttributes(OTel.attributes([
-          OTel.attributeString(
-            ErrorResource.errorType.key,
+        span.addAttributes(OTelAPI.attributes([
+          OTelAPI.attributeString(
+            ErrorAttributes.errorType.key,
             res.errorCode ?? 'nanonets.error',
           )
         ]));
